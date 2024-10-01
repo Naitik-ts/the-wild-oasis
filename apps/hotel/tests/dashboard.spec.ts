@@ -111,6 +111,15 @@ test("testing the Cabin page", async ({ page }) => {
 
   await deleteActionDropDownMenu.click();
 
+  const deletebutton = page.getByRole("button", { name: "Delete" });
+  await expect(deletebutton).toBeVisible();
+  await deletebutton.click();
+  const mainBody = page.locator("body");
+  await mainBody.click();
+
+  const deleteToast = page.getByText("Cabin successfully deleted");
+  await expect(deleteToast).toBeVisible();
+  await expect(initialData).toBeVisible();
   //=======================adding a cabin=====================
   // const addNewCabinButton = page.getByRole("button", { name: "Add new cabin" });
   // await expect(addNewCabinButton).toBeVisible();
