@@ -1,23 +1,12 @@
-import { expect, test } from "@playwright/test";
-
-// 1. Test plan
-// 1. login page should be displayed when not logged in
-// 2. user should be able to login
-// 3. user should be able to logout
-// 4. when logged in, user should be able to see the dashboard
+import { test, expect } from "@playwright/test";
 
 const BASE_URL = "http://localhost:5173";
 const DASHBOARD_URL = `${BASE_URL}/dashboard`;
 const LOGIN_URL = `${BASE_URL}/login`;
 
-test.use({
-  storageState: {
-    cookies: [],
-    origins: [],
-  },
-});
-test("Login testing", async ({ page }) => {
-  await page.goto(BASE_URL);
+test("Login setup", async ({ page }) => {
+  await page.goto(DASHBOARD_URL);
+
   await page.waitForURL(LOGIN_URL);
   expect(page.url()).toBe(LOGIN_URL);
 
@@ -43,20 +32,7 @@ test("Login testing", async ({ page }) => {
   await page.waitForURL(DASHBOARD_URL);
   expect(page.url()).toBe(DASHBOARD_URL);
 
-  const dashboardHeading = page.locator("h1").filter({ hasText: "Dashboard" });
-  await expect(dashboardHeading).toBeVisible();
-
-  const logoutButton = page.getByLabel("Log out");
-  await expect(logoutButton).toBeVisible();
-  await logoutButton.click();
-
-  await page.waitForURL(LOGIN_URL);
-  expect(page.url()).toBe(LOGIN_URL);
-  await expect(loginPageTitle).toBeVisible();
-
-  const toastContainer = page.getByRole("status");
-  await emailInputField.fill("gowtha@gowthamreilly.com");
-  await passwordInputField.fill("Revolution@23");
-  await loginButton.click();
-  await expect(toastContainer).toBeVisible();
+  await page.context().storageState({
+    path: "auth.json",
+  });
 });

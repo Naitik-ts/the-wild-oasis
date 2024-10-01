@@ -1,45 +1,12 @@
 import { test, expect } from "@playwright/test";
 import path from "path";
 
-const BASE_URL = "http://localhost:5173";
-const DASHBOARD_URL = `${BASE_URL}/dashboard`;
-const LOGIN_URL = `${BASE_URL}/login`;
-const CABIN_LINK = `${BASE_URL}/cabins`;
-
 const uniqueCabinName = () => {
   return `${Date.now()} Cabin`;
 };
-
-test.beforeEach(async ({ page }) => {
-  await page.goto(DASHBOARD_URL);
-
-  await page.waitForURL(LOGIN_URL);
-  expect(page.url()).toBe(LOGIN_URL);
-
-  const loginPageTitle = page.getByText("Log in to your account");
-  await expect(loginPageTitle).toBeVisible();
-
-  const formContainer = page.locator("form");
-  await expect(formContainer).toBeVisible();
-
-  const emailInputField = formContainer.getByLabel("Email address");
-  await expect(emailInputField).toBeVisible();
-  await emailInputField.fill("gowtham@gowthamreilly.com");
-  await expect(emailInputField).toHaveValue("gowtham@gowthamreilly.com");
-
-  const passwordInputField = formContainer.getByLabel("Password");
-  await expect(passwordInputField).toBeVisible();
-  await passwordInputField.fill("Revolution@24");
-  await expect(passwordInputField).toHaveValue("Revolution@24");
-
-  const loginButton = formContainer.getByRole("button", { name: "Log in" });
-  await loginButton.click();
-
-  await page.waitForURL(DASHBOARD_URL);
-  expect(page.url()).toBe(DASHBOARD_URL);
-});
-
-test("testing the Cabin page", async ({ page }) => {
+const API_KEY = process.env.VITE_SUPABASE_ANON_KEY!;
+test("testing the Cabin page and deleting it from UI", async ({ page }) => {
+  await page.goto("/");
   const navbarContainer = page.locator("nav");
   await expect(navbarContainer).toBeVisible();
 
@@ -52,8 +19,8 @@ test("testing the Cabin page", async ({ page }) => {
 
   const cabinLink = allLinks.getByText("Cabins");
   await cabinLink.click();
-  await page.waitForURL(CABIN_LINK);
-  expect(page.url()).toBe(CABIN_LINK);
+  await page.waitForURL("/cabins");
+  expect(page.url()).toBe("http://localhost:5173/cabins");
 
   const cabinHeader = page.getByLabel("cabin-header");
   await expect(cabinHeader).toBeVisible();
@@ -114,8 +81,8 @@ test("testing the Cabin page", async ({ page }) => {
   const deletebutton = page.getByRole("button", { name: "Delete" });
   await expect(deletebutton).toBeVisible();
   await deletebutton.click();
-  const mainBody = page.locator("body");
-  await mainBody.click();
+  // const mainBody = page.locator("body");
+  // await mainBody.click();
 
   const deleteToast = page.getByText("Cabin successfully deleted");
   await expect(deleteToast).toBeVisible();
@@ -163,4 +130,52 @@ test("testing the Cabin page", async ({ page }) => {
 
   // const addCabinToastMessage = page.getByText("New cabin successfully created");
   // await expect(addCabinToastMessage).toBeVisible();
+});
+
+const newCabin = {
+  name: "Natty",
+  maxCapacity: 2,
+  regularPrice: 500,
+  discount: 0,
+  description: "cabin for 2",
+  image:
+    "https://umxjivfxuijjbopalczq.supabase.co/storage/v1/object/public/cabin-images/0.4001088820184644-wallpaper-894.jpeg",
+};
+test("adding a new cabin by API", async ({ page, request }) => {
+  const storageState = await page.context().storageState();
+  console.log("storageState", storageState);
+
+  const localStorage = storageState.origins[0].localStorage;
+  console.log("localStorage", localStorage);
+
+  const superBaseItem = localStorage.find(
+    (item) => item.name === "sb-umxjivfxuijjbopalczq-auth-token"
+  );
+  console.log("superBaseItem", superBaseItem);
+
+  const superBaseValue = superBaseItem?.value;
+  console.log("superBaseValue", superBaseValue);
+
+  const jsondata = superBaseValue ? JSON.parse(superBaseValue) : undefined;
+  const access_token = jsondata ? jsondata["access_token"] : undefined;
+
+  console.log("access_token", access_token);
+
+  const response = await request.post(
+    `https://umxjivfxuijjbopalczq.supabase.co/rest/v1/cabins`,
+    {
+      data: newCabin,
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        Prefer: "return=representation",
+        apikey: API_KEY,
+      },
+    }
+  );
+  if (response.status() === 201) {
+    const data = await response.json();
+    console.log("DATA", data);
+    const cabinId = await data[0].id;
+    console.log("Cabin Id", cabinId);
+  }
 });
