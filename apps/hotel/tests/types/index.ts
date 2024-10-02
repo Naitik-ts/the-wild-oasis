@@ -6,3 +6,5 @@ export type CreateCabinPayload = {
   description: string;
   image: string;
 };
+
+export type EditCabinPayload = Partial<CreateCabinPayload>;

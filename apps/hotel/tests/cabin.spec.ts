@@ -11,11 +11,11 @@ const generateUniqueCabinName = () => {
 
 let cabinId = undefined;
 
-test.beforeEach(async () => {
-  cabinId = undefined;
-});
+// test.beforeEach(async () => {
+//   cabinId = undefined;
+// });
 
-test("create a cabin", async ({ page }) => {
+test("create a cabin by UI", async ({ page }) => {
   await page.goto("/");
   const cabinsNavMenuItemLink = page.getByRole("link", { name: "Cabins" });
 
@@ -145,7 +145,7 @@ test("create a cabin", async ({ page }) => {
   await expect(newlyCreatedCabinNameLocator).toBeVisible();
 });
 
-test("delete a cabin", async ({ page }) => {
+test("Create and delete the cabin by API", async ({ page }) => {
   const cabinName = generateUniqueCabinName();
 
   const res = await apiClient.createCabin({
@@ -160,12 +160,19 @@ test("delete a cabin", async ({ page }) => {
   const data = await res.json();
 
   console.log("DATA", data);
+  cabinId = data[0].id;
+
+  if (cabinId) {
+    await apiClient.deleteCabinById(cabinId);
+  }
 
   await page.goto("/");
 });
 
-test.afterEach(async () => {
-  if (cabinId) {
-    await apiClient.deleteCabinById(cabinId);
-  }
+test("Editing cabin using api", async ({ page }) => {
+  // const res = await apiClient.editCabin({
+  //   name: "test",
+  // });
 });
+
+// test.afterEach(async () => {});

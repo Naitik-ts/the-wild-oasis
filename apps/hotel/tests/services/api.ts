@@ -1,5 +1,5 @@
 import { request } from "@playwright/test";
-import { CreateCabinPayload } from "../types";
+import { CreateCabinPayload, EditCabinPayload } from "../types";
 
 const accessToken = process.env.ACCESS_TOKEN!;
 
@@ -28,7 +28,12 @@ const createCabin = async (cabin: CreateCabinPayload) => {
   });
 };
 
+const editCabin = async (cabin: EditCabinPayload) => {
+  console.log(cabin);
+};
+
 export const apiClient = {
   deleteCabinById,
   createCabin,
+  editCabin,
 };
