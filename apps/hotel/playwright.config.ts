@@ -27,7 +27,11 @@ export default defineConfig({
     },
   ],
 
-  reporter: [["list"], ["html"]],
+  reporter: [
+    ["list"],
+    ["html", { open: "never" }],
+    ["junit", { outputFile: "./playwright-report/junit-report.xml" }],
+  ],
   use: {
     trace: "retain-on-failure",
     baseURL: APP_URL,

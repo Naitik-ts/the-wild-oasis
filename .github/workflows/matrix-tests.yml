@@ -49,7 +49,7 @@ jobs:
         run: npx playwright test
       - name: Upload artifcats
         uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{!cancelled()}}
         with:
           path: apps/${{matrix.app-name}}/playwright-report
           name: playwright-report-${{matrix.app-name}}

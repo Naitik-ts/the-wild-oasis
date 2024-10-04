@@ -1,6 +1,7 @@
 import { test, expect } from "./config";
 import { CabinPage } from "./pages/cabin.page";
 import { generateUniqueCabinName } from "./utils";
+import path from "path";
 
 const CUSTOMER_APP_URL = "http://localhost:3000/";
 const CUSTOMER_CABINS_URL = `${CUSTOMER_APP_URL}cabins`;
@@ -19,7 +20,7 @@ test.describe("CRUD Cabins", () => {
   });
 
   test(
-    "create a cabin",
+    "[C4] can create a cabin",
     {
       tag: ["@cabin-feature", "@smoke", "@regression"],
     },
@@ -105,10 +106,7 @@ test.describe("CRUD Cabins", () => {
     }
   );
 
-  test("delete a  @regression @cabin-feature", async ({
-    page,
-    graphqlApiClient,
-  }) => {
+  test("[C5] can delete a cabin", async ({ page, graphqlApiClient }) => {
     const cabinName = generateUniqueCabinName();
 
     const res = await graphqlApiClient.createCabin({

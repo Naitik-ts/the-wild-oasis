@@ -14,10 +14,7 @@ test.use({
   },
 });
 
-test("login page should be displayed when not logged in", async ({
-  page,
-  baseURL,
-}) => {
+test("[C6] can successfully login", async ({ page, baseURL }) => {
   const loginPage = new LoginPage(page);
 
   await loginPage.goto();

@@ -1,0 +1,86 @@
+name: TestRail integration
+
+on:
+  workflow_dispatch:
+    inputs:
+      playwright-env:
+        description: Playwright environment
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+          - development
+          - moon
+          - qa
+      run-id:
+        description: Test run id
+        required: true
+        type: number
+
+jobs:
+  test:
+    if: ${{ github.event.inputs.run-id != null }}
+    strategy:
+      matrix:
+        app-name: ["guest", "hotel"]
+    name: Testing ${{matrix.app-name}} application (${{inputs.playwright-env}})
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_ENV: ${{inputs.playwright-env}}
+      SUPABASE_URL: ${{secrets.SUPABASE_URL}}
+      SUPABASE_KEY: ${{secrets.SUPABASE_KEY}}
+      NEXTAUTH_URL: ${{secrets.NEXTAUTH_URL}}
+      NEXTAUTH_SECRET: ${{secrets.NEXTAUTH_SECRET}}
+    steps:
+      - name: Fetch test cases from TestRail
+        id: fetch-test-cases
+        uses: fjogeleit/http-request-action@v1.14.1
+        with:
+          url: ${{secrets.TESTRAIL_HOST}}index.php?/api/v2/get_tests/${{ github.event.inputs.run-id }}
+          method: GET
+          username: ${{secrets.TESTRAIL_USERNAME}}
+          password: ${{secrets.TESTRAIL_KEY}}
+
+      - name: Clone the repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.x
+
+      - name: Install TestRail CLI
+        run: |
+          pip install trcli
+
+      - name: Install repo dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Execute Tests
+        working-directory: apps/${{matrix.app-name}}
+        run: |
+          (npx playwright test --grep "${{join(fromJSON(steps.fetch-test-cases.outputs.response).tests.*.case_id, '|')}}" || exit 0)
+
+      - name: TestRail CLI upload results
+        if: always()
+        run: |
+          trcli -n \
+            -h ${{secrets.TESTRAIL_HOST}} \
+            --project "${{secrets.TESTRAIL_PROJECT_NAME}}" \
+            -u ${{secrets.TESTRAIL_USERNAME}} \
+            -k ${{secrets.TESTRAIL_KEY}} \
+            parse_junit \
+            --case-matcher name \
+            --title "Automated Tests from GitHub workflow ${{inputs.playwright-env}}" \
+            --run-description ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            -f "apps/${{matrix.app-name}}/playwright-report/junit-report.xml" \
+            --run-id ${{inputs.run-id}}
